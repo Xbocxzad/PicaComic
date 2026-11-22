@@ -1,6 +1,8 @@
 name: build-apk
 on:
   workflow_dispatch:
+  push:
+    branches: [ master ]
 
 jobs:
   build:
@@ -16,7 +18,7 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.35.1'
+          flutter-version: '3.38.0'
           channel: stable
           cache: true
 
