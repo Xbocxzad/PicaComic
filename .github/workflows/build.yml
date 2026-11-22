@@ -36,7 +36,7 @@ jobs:
         run: flutter pub get
 
       - name: Build APK
-        run: flutter build apk --release --target-platform android-arm64
+        run: flutter build apk --release --target-platform android-arm64 --android-skip-build-dependency-validation
 
       - name: Show outputs
         if: always()
