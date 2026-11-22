@@ -54,14 +54,28 @@ jobs:
       - name: Build APK
         run: flutter build apk --release --target-platform android-arm64 --android-skip-build-dependency-validation
 
-      - name: Show outputs
-        if: always()
-        run: find build/app/outputs -name '*.apk' -exec ls -lh {} \;
+      - name: Stage main apk
+        run: |
+          mkdir -p build/coexist
+          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk build/coexist/pica-main-arm64.apk
+          ls -lh build/coexist
+
+      - name: Apply coexist patch
+        run: python3 patch2.py
+
+      - name: Build co-exist APK
+        run: flutter build apk --release --target-platform android-arm64 --android-skip-build-dependency-validation
+
+      - name: Stage coexist apk
+        run: |
+          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk build/coexist/pica-lx-arm64.apk
+          find build/app/outputs -name '*.apk' -exec ls -lh {} \;
+          ls -lh build/coexist
 
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: pica-patched
-          path: build/app/outputs/flutter-apk/*.apk
+          name: pica-apks
+          path: build/coexist/*.apk
           if-no-files-found: warn
           retention-days: 14
