@@ -27,7 +27,7 @@ jobs:
 
       - name: Signing setup
         run: |
-          keytool -genkeypair -v -keystore android/release.jks -keyalg RSA -keysize 2048 -validity 10000 \
+          keytool -genkeypair -v -keystore android/app/release.jks -keyalg RSA -keysize 2048 -validity 10000 \
             -alias release -storepass picabuild -keypass picabuild \
             -dname "CN=Pica, OU=Dev, O=Dev, L=Dev, ST=Dev, C=CN"
           printf 'storeFile=release.jks\nstorePassword=picabuild\nkeyAlias=release\nkeyPassword=picabuild\n' > android/key.properties
