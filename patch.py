@@ -27,6 +27,25 @@ def sub(path, old, new, expect=None):
     return True
 ok = True
 
+# 0-T) hitomi 图床按 IP 限流：请求发起间隔 ≥130ms（16 线程时约 7.7 req/s）
+# 实测 16 线程 ≈22 req/s 会直接被 503 + "Your IP address has been banned"
+if not sub(
+    'lib/foundation/image_manager.dart',
+    '  int ehgtLoading = 0;',
+    '  int ehgtLoading = 0;\n'
+    '\n'
+    '  /// hitomi 图床对同 IP 请求速率极敏感，这里做全局节流\n'
+    '  static DateTime _lastHitomiReq = DateTime(2000);\n'
+    '  static Future<void> _hitomiThrottle() async {\n'
+    '    final ms = DateTime.now().difference(_lastHitomiReq).inMilliseconds;\n'
+    '    if (ms < 130) {\n'
+    '      await Future.delayed(Duration(milliseconds: 130 - ms));\n'
+    '    }\n'
+    '    _lastHitomiReq = DateTime.now();\n'
+    '  }',
+):
+    ok = False
+
 # 0-A) hitomi 图片请求改用 ImageManager 的共享 dio（连接复用）
 # 原来每张图都 new 一个 Dio，等于每张图新建 TCP+TLS（实测 3.7s/次握手）
 _A_OLD = '''      var dio = logDio();
@@ -38,7 +57,8 @@ _A_OLD = '''      var dio = logDio();
       var res = await dio.get<ResponseBody>(url,
           options: Options(responseType: ResponseType.stream));'''
 
-_A_NEW = '''      var res = await dio.get<ResponseBody>(url,
+_A_NEW = '''      await _hitomiThrottle();
+      var res = await dio.get<ResponseBody>(url,
           options: Options(
               responseType: ResponseType.stream,
               receiveTimeout: const Duration(seconds: 25),
