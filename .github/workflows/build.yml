@@ -27,11 +27,26 @@ jobs:
 
       - name: Signing setup
         run: |
-          keytool -genkeypair -v -keystore android/app/release.jks -keyalg RSA -keysize 2048 -validity 10000 \
-            -alias release -storepass picabuild -keypass picabuild \
-            -dname "CN=Pica, OU=Dev, O=Dev, L=Dev, ST=Dev, C=CN"
+          if [ -f keystore.b64 ]; then
+            base64 -d keystore.b64 > android/app/release.jks
+            echo "using committed keystore"
+          else
+            keytool -genkeypair -v -keystore android/app/release.jks -keyalg RSA -keysize 2048 -validity 10000 \
+              -alias release -storepass picabuild -keypass picabuild \
+              -dname "CN=Pica, OU=Dev, O=Dev, L=Dev, ST=Dev, C=CN"
+            echo "generated new keystore"
+          fi
           printf 'storeFile=release.jks\nstorePassword=picabuild\nkeyAlias=release\nkeyPassword=picabuild\n' > android/key.properties
+          base64 -w0 android/app/release.jks > /tmp/k.b64
+          echo "KEYSTORE_B64_LEN=$(wc -c < /tmp/k.b64)"
           flutter --version
+
+      - name: Upload keystore
+        uses: actions/upload-artifact@v4
+        with:
+          name: keystore
+          path: android/app/release.jks
+          retention-days: 30
 
       - name: Pub get
         run: flutter pub get
