@@ -25,8 +25,39 @@ def sub(path, old, new, expect=None):
     write(path, s)
     print('[OK] %s x%d' % (path, n))
     return True
-
 ok = True
+
+# 0-A) hitomi 图片请求改用 ImageManager 的共享 dio（连接复用）
+# 原来每张图都 new 一个 Dio，等于每张图新建 TCP+TLS（实测 3.7s/次握手）
+_A_OLD = '''      var dio = logDio();
+      dio.options.headers = {
+        "User-Agent": webUA,
+        "Referer": "https://hitomi.la/reader/$galleryId.html"
+      };
+
+      var res = await dio.get<ResponseBody>(url,
+          options: Options(responseType: ResponseType.stream));'''
+
+_A_NEW = '''      var res = await dio.get<ResponseBody>(url,
+          options: Options(
+              responseType: ResponseType.stream,
+              receiveTimeout: const Duration(seconds: 25),
+              headers: {
+                "User-Agent": webUA,
+                "Referer": "https://hitomi.la/reader/$galleryId.html"
+              }));'''
+
+if not sub('lib/foundation/image_manager.dart', _A_OLD, _A_NEW):
+    ok = False
+
+# 0-B) gg.js 缓存 100ms → 10 分钟（原来几乎每张图都要重新拉一次 gg.js）
+if not sub(
+    'lib/network/hitomi_network/image.dart',
+    '- cacheTime!.millisecondsSinceEpoch < 100){',
+    '- cacheTime!.millisecondsSinceEpoch < 600000){',
+):
+    ok = False
+
 
 # 1) 并发档位加上 32 / 48（原来是 1/2/4/6/8/16）
 ok &= sub(
