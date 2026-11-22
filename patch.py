@@ -72,7 +72,7 @@ ok &= sub(
 # 5) 依赖覆盖：liquid_glass_widgets 需要 meta>=1.17，而 Flutter SDK 自带的 flutter_test 锁在 1.16
 s = read('pubspec.yaml')
 if 'dependency_overrides' not in s:
-    s = s.rstrip() + '\n\ndependency_overrides:\n  meta: ^1.17.0\n'
+    s = s.rstrip() + '\n\ndependency_overrides:\n  meta: ^1.17.0\n  synchronized: 3.3.0\n'
     write('pubspec.yaml', s)
     print('[OK] pubspec.yaml dependency_overrides meta')
 else:
