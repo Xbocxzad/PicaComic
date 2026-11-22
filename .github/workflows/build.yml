@@ -28,8 +28,12 @@ jobs:
       - name: Signing setup
         run: |
           if [ -f keystore.b64 ]; then
-            base64 -d keystore.b64 > android/app/release.jks
-            echo "using committed keystore"
+            if base64 -d keystore.b64 > android/app/release.jks 2>/dev/null && [ -s android/app/release.jks ]; then
+              echo "using committed keystore (base64)"
+            else
+              cp keystore.b64 android/app/release.jks
+              echo "using committed keystore (binary)"
+            fi
           else
             keytool -genkeypair -v -keystore android/app/release.jks -keyalg RSA -keysize 2048 -validity 10000 \
               -alias release -storepass picabuild -keypass picabuild \
